@@ -1,6 +1,10 @@
 require 'curb'
 require 'nokogiri'
+require 'csv'
 
+# source_url = 'https://www.petsonic.com/snacks-huesos-para-perros/'
+# file_name = 'result.csv'
+# item_url = 'https://www.petsonic.com/pienso-para-perros-hill-s-prescription-diet-pd-canine-z-d-ultra.html'
 
 def check_args()
 	if ARGV.length() <= 1
@@ -14,10 +18,7 @@ def check_args()
 	end
 end
 
-source_url = 'https://www.petsonic.com/snacks-huesos-para-perros/'
-url_first_snack = 'https://www.petsonic.com/snacks-de-pollo-en-monodosis-para-perro.html'
-
-def get_prods_links(url)
+def get_prod_links(url)
 
 	list_of_links = []
 
@@ -31,47 +32,70 @@ def get_prods_links(url)
 	return list_of_links
 end
 
+def get_prod_weight_and_price(doc)
+
+	prod_prices_list = []
+	prod_weight_list = []
+
+	doc_info = doc.xpath('//ul[@class = "attribute_radio_list"]//li')
+	
+	prod_prices_tags = doc_info.xpath('//span[@class = "price_comb"]')
+	prod_weight_tags = doc_info.xpath('//span[@class = "radio_label"]')
+
+	prod_prices_tags.each do |price|
+		prod_prices_list.push(price.text)
+	end
+
+	prod_weight_tags.each do |weight|
+		prod_weight_list.push(weight.text)
+	end
+
+	result_info = prod_weight_list.zip(prod_prices_list)
+	return result_info
+end
+
 def get_prod_data(urls_list)
 
-	prod_names = []
-	prod_prices = []
+	result_arr = []
 
 	urls_list.each do |url|
 
+		prod_result = []
+
 		http = Curl.get(url).body_str
-		doc = Nokogiri::HTML(http)
+		prod_doc = Nokogiri::HTML(http)
 
-		prod_name = doc.xpath('//h1[@class = "product_main_name"]').text
-		prod_names.push(prod_name)
+		prod_info = get_prod_weight_and_price(prod_doc)
+		prod_name = prod_doc.xpath('//h1[@class = "product_main_name"]').text
+		prod_img = prod_doc.xpath('//img[@id = "bigpic"]').attr('src')
 
-		prod_price = doc.xpath('//span[@id = "our_price_display"]').text
-		prod_prices.push(prod_price)
+		prod_info.each do |info|
+			prod_result.push(prod_name + " - " + info[0], info[1], prod_img)	
+		end
+
+		result_arr.push(prod_result)
 
 	end
 
-
+	return result_arr
 end
 
-get_prod_data(get_prods_links(source_url))
+def start()
 
-# http = Curl.get(url_first_snack).body_str
+	if check_args == 1
 
-# doc = Nokogiri::HTML(http)
+		url = ARGV[0]
+		file_name = ARGV[1]
 
-# doc.xpath('//a[@class="product-name"]').each do |link|
-# 	puts link.content
-# end
+		data_list = get_prod_data(get_prod_links(url))
 
-# prod_html = doc.xpath('//div[@class = "row"]')
+		CSV.open(file_name, 'wb') do |csv|
+			for data in data_list
+				csv << data
+			end
+		end
 
-# prod_name = prod_html.at_xpath('//div//h1').text
-# prod_price = prod_html.at_xpath('//span[@id = "our_price_display"]').text
-# prod_img = prod_html.at_xpath('//img[@id = "bigpic"]').text
+	end
+end
 
-# puts prod_name, prod_price, prod_img
-
-
-
-
-# //h2[@class = "prod-name-pack"]/*
-# /html/body/div[1]/div/div[2]/div/div/div[2]/div[7]/ul/li[1]/div[1]/div[2]/div[2]/div[1]/h2
+start()
