@@ -26,14 +26,26 @@ def get_prod_links(url)
 	puts 'Reading category...'
 
 	list_of_links = []
+	i = 0
 
-	http = Curl.get(url).body_str
-	doc = Nokogiri::HTML(http)
+	while true
 
-	doc.xpath('//a[@class="product-name"]').each do |link|
-		list_of_links.push(link.attr('href'))
+		if i == 0
+			http = Curl.get(url).body_str
+			i+=1
+		else
+			http = Curl.get(url + "?p=#{i+=1}").body_str
+		end
+
+		doc = Nokogiri::HTML(http)
+
+		doc.xpath('//a[@class="product-name"]').each do |link|
+			list_of_links.push(link.attr('href'))
+		end
+
+		i == 3 ? break : nil
 	end
-	
+
 	return list_of_links
 end
 
@@ -101,9 +113,10 @@ def start()
 				csv << data
 			end
 		end
-	end
 
-	puts 'Done! Check the file!'
+		puts 'Done! Check the file!'
+	end
 end
 
 start()
+
