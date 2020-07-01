@@ -7,6 +7,9 @@ require 'csv'
 # item_url = 'https://www.petsonic.com/pienso-para-perros-hill-s-prescription-diet-pd-canine-z-d-ultra.html'
 
 def check_args()
+
+	puts 'Checking args...'
+
 	if ARGV.length() <= 1
 		puts 'Too small args'
 		return 0
@@ -19,6 +22,8 @@ def check_args()
 end
 
 def get_prod_links(url)
+
+	puts 'Reading category...'
 
 	list_of_links = []
 
@@ -55,6 +60,8 @@ def get_prod_weight_and_price(doc)
 end
 
 def get_prod_data(urls_list)
+
+	puts 'Collecting data...'
 
 	result_arr = []
 
@@ -94,8 +101,9 @@ def start()
 				csv << data
 			end
 		end
-
 	end
+
+	puts 'Done! Check the file!'
 end
 
 start()
