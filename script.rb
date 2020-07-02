@@ -2,9 +2,10 @@ require 'curb'
 require 'nokogiri'
 require 'csv'
 
-# source_url = 'https://www.petsonic.com/snacks-huesos-para-perros/'
-# file_name = 'result.csv'
-# item_url = 'https://www.petsonic.com/pienso-para-perros-hill-s-prescription-diet-pd-canine-z-d-ultra.html'
+# Run to check the script:
+# ruby script.rb https://www.petsonic.com/snacks-huesos-para-perros/ result.csv
+
+# Git repo: https://github.com/BuHogeJI2/ruby-parser
 
 def check_args()
 
@@ -39,11 +40,9 @@ def get_prod_links(url)
 
 		doc = Nokogiri::HTML(http)
 
-		doc.xpath('//a[@class="product-name"]').each do |link|
-			list_of_links.push(link.attr('href'))
-		end
+		load_btn = doc.xpath('//button[@class = "loadMore next button lnk_view btn btn-default"]')
+		load_btn.empty? ? break : doc.xpath('//a[@class="product-name"]').map { |link| list_of_links.push(link.attr('href')) }
 
-		i == 3 ? break : nil
 	end
 
 	return list_of_links
@@ -51,21 +50,13 @@ end
 
 def get_prod_weight_and_price(doc)
 
-	prod_prices_list = []
-	prod_weight_list = []
-
 	doc_info = doc.xpath('//ul[@class = "attribute_radio_list"]//li')
 	
 	prod_prices_tags = doc_info.xpath('//span[@class = "price_comb"]')
 	prod_weight_tags = doc_info.xpath('//span[@class = "radio_label"]')
 
-	prod_prices_tags.each do |price|
-		prod_prices_list.push(price.text)
-	end
-
-	prod_weight_tags.each do |weight|
-		prod_weight_list.push(weight.text)
-	end
+	prod_prices_list = prod_prices_tags.map { |price| price.text }
+	prod_weight_list = prod_weight_tags.map { |weight| weight.text }
 
 	result_info = prod_weight_list.zip(prod_prices_list)
 	return result_info
@@ -88,9 +79,7 @@ def get_prod_data(urls_list)
 		prod_name = prod_doc.xpath('//h1[@class = "product_main_name"]').text
 		prod_img = prod_doc.xpath('//img[@id = "bigpic"]').attr('src')
 
-		prod_info.each do |info|
-			prod_result.push(prod_name + " - " + info[0], info[1], prod_img)	
-		end
+		prod_info.map { |info| prod_result.push(prod_name + " - " + info[0], info[1], prod_img) }
 
 		result_arr.push(prod_result)
 
@@ -118,5 +107,5 @@ def start()
 	end
 end
 
-start()
 
+start()
